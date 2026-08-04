@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SolderYard — trade electronics projects & parts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#EEF3F1;
+    --bg-alt:#E2ECE7;
+    --ink:#0F2E1D;
+    --ink-soft:#3C5B49;
+    --copper:#C68E17;
+    --copper-bright:#E3A828;
+    --card:#FBFAF6;
+    --line:#C9D6CE;
+    --white:#ffffff;
+    --radius:14px;
+    --shadow:0 2px 0 rgba(15,46,29,0.06), 0 8px 20px rgba(15,46,29,0.06);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{
+    font-family:'Space Grotesk', sans-serif;
+    letter-spacing:-0.01em;
+    margin:0;
+  }
+  .mono{font-family:'IBM Plex Mono', monospace;}
+  a{color:inherit;}
+  button{font-family:inherit;cursor:pointer;}
+  :focus-visible{outline:3px solid var(--copper); outline-offset:2px;}
+
+  /* ---------- layout helpers ---------- */
+  .wrap{max-width:1160px; margin:0 auto; padding:0 24px;}
+  .section{padding:64px 0;}
+  @media (max-width:640px){ .section{padding:44px 0;} }
+
+  /* ---------- nav ---------- */
+  header.nav{
+    position:sticky; top:0; z-index:50;
+    background:var(--ink);
+    color:var(--bg);
+  }
+  .nav-inner{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 24px; max-width:1160px; margin:0 auto;
+  }
+  .logo{
+    display:flex; align-items:center; gap:8px;
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700; font-size:1.15rem; color:var(--bg);
+    text-decoration:none;
+  }
+  .logo svg{ display:block; }
+  .nav-links{ display:flex; gap:28px; align-items:center; list-style:none; margin:0; padding:0; }
+  .nav-links a{
+    text-decoration:none; color:var(--bg); opacity:0.85; font-size:0.92rem; font-weight:500;
+  }
+  .nav-links a:hover{ opacity:1; }
+  .nav-cta{
+    background:var(--copper); color:var(--ink); border:none;
+    padding:9px 16px; border-radius:999px; font-weight:600; font-size:0.88rem;
+  }
+  .nav-cta:hover{ background:var(--copper-bright); }
+  .nav-toggle{ display:none; background:none; border:1px solid rgba(238,243,241,0.4); color:var(--bg); border-radius:8px; padding:6px 10px; }
+  @media (max-width:760px){
+    .nav-links{
+      position:absolute; top:100%; left:0; right:0; background:var(--ink);
+      flex-direction:column; align-items:flex-start; gap:0; padding:8px 24px 18px;
+      display:none;
+    }
+    .nav-links.open{ display:flex; }
+    .nav-links li{ width:100%; padding:10px 0; border-bottom:1px solid rgba(238,243,241,0.12); }
+    .nav-toggle{ display:inline-block; }
+  }
+
+  /* ---------- hero ---------- */
+  .hero{
+    position:relative; overflow:hidden;
+    background:
+      radial-gradient(circle at 6px 6px, rgba(15,46,29,0.10) 1.4px, transparent 1.6px) 0 0/26px 26px,
+      var(--bg-alt);
+    padding:88px 0 72px;
+    border-bottom:1px solid var(--line);
+  }
+  .hero-inner{ position:relative; max-width:720px; z-index:2; }
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:'IBM Plex Mono', monospace; font-size:0.78rem; letter-spacing:0.06em;
+    text-transform:uppercase; color:var(--ink-soft);
+    background:var(--card); border:1px solid var(--line);
+    padding:6px 12px; border-radius:999px; margin-bottom:22px;
+  }
+  .eyebrow .dot{ width:7px; height:7px; border-radius:50%; background:var(--copper); }
+  .hero h1{
+    font-size:clamp(2.1rem, 5vw, 3.3rem); font-weight:700; line-height:1.06; color:var(--ink);
+  }
+  .hero h1 .underline{
+    text-decoration: underline solid var(--copper) 4px;
+    text-underline-offset:6px;
+  }
+  .hero p.sub{
+    margin-top:20px; font-size:1.08rem; color:var(--ink-soft); max-width:52ch;
+  }
+  .hero-actions{ margin-top:32px; display:flex; gap:14px; flex-wrap:wrap; }
+  .btn{
+    border:none; border-radius:10px; padding:13px 22px; font-weight:600; font-size:0.95rem;
+    display:inline-flex; align-items:center; gap:8px; text-decoration:none;
+  }
+  .btn-primary{ background:var(--ink); color:var(--bg); }
+  .btn-primary:hover{ background:#164026; }
+  .btn-copper{ background:var(--copper); color:var(--ink); }
+  .btn-copper:hover{ background:var(--copper-bright); }
+  .btn-ghost{ background:transparent; color:var(--ink); border:1.5px solid var(--ink); }
+  .btn-ghost:hover{ background:var(--ink); color:var(--bg); }
+
+  .trace{
+    position:absolute; right:-40px; top:20px; width:420px; height:420px; opacity:0.9; z-index:1;
+  }
+  .trace path{
+    fill:none; stroke:var(--copper); stroke-width:2.5; stroke-linecap:round;
+    stroke-dasharray:8 10;
+  }
+  @media (prefers-reduced-motion: no-preference){
+    .trace path{ animation: flow 5s linear infinite; }
+  }
+  @keyframes flow{ to{ stroke-dashoffset:-180; } }
+  @media (max-width:900px){ .trace{ display:none; } }
+
+  /* ---------- section headers ---------- */
+  .section-head{ max-width:640px; margin-bottom:36px; }
+  .section-head h2{ font-size:1.7rem; font-weight:700; }
+  .section-head p{ color:var(--ink-soft); margin-top:8px; }
+
+  /* ---------- legend / categories ---------- */
+  .legend-grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(210px,1fr)); gap:12px;
+  }
+  .band-chip{
+    display:flex; align-items:center; gap:12px;
+    background:var(--card); border:1.5px solid var(--line); border-radius:10px;
+    padding:12px 14px; text-align:left; transition:border-color .15s, transform .1s;
+  }
+  .band-chip:hover{ transform:translateY(-2px); }
+  .band-chip.active{ border-color:var(--ink); }
+  .band-swatch{
+    width:14px; height:34px; border-radius:3px; flex-shrink:0;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15);
+  }
+  .band-label{ font-weight:600; font-size:0.92rem; }
+  .band-name{ font-family:'IBM Plex Mono', monospace; font-size:0.72rem; color:var(--ink-soft); }
+
+  /* ---------- listings controls ---------- */
+  .listings-toolbar{
+    display:flex; flex-wrap:wrap; gap:14px; align-items:center; justify-content:space-between;
+    margin-bottom:26px;
+  }
+  .tabs{ display:flex; gap:6px; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:4px; }
+  .tab{
+    background:none; border:none; padding:8px 16px; border-radius:8px; font-weight:600; font-size:0.86rem; color:var(--ink-soft);
+  }
+  .tab.active{ background:var(--ink); color:var(--bg); }
+  .search-box{
+    display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--line);
+    border-radius:10px; padding:9px 14px; flex:1; min-width:220px; max-width:360px;
+  }
+  .search-box input{
+    border:none; background:none; outline:none; width:100%; font-family:inherit; font-size:0.92rem; color:var(--ink);
+  }
+  .clear-filter{
+    background:none; border:1px solid var(--line); border-radius:999px; padding:6px 12px; font-size:0.8rem; color:var(--ink-soft);
+  }
+
+  /* ---------- listing grid ---------- */
+  .grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:18px;
+  }
+  .card{
+    position:relative; background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:0 0 18px; display:flex; flex-direction:column; gap:10px;
+    overflow:hidden;
+  }
+  .card::before{
+    content:""; position:absolute; left:0; top:0; bottom:0; width:6px; background:var(--band-color, var(--copper)); z-index:3;
+  }
+  .card.sold{ opacity:0.65; }
+  .card-media{
+    position:relative; width:100%; aspect-ratio:16/10; background:var(--bg-alt); overflow:hidden;
+    border-bottom:1px solid var(--line);
+  }
+  .card-media img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .card-media .no-image{
+    width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+    color:var(--ink-soft); font-size:0.78rem; font-family:'IBM Plex Mono', monospace;
+  }
+  .media-count{
+    position:absolute; bottom:8px; right:8px; background:rgba(15,46,29,0.75); color:var(--bg);
+    font-family:'IBM Plex Mono', monospace; font-size:0.7rem; padding:3px 8px; border-radius:999px;
+  }
+  .sold-ribbon{
+    position:absolute; top:10px; left:-6px; background:var(--ink); color:var(--bg);
+    font-family:'IBM Plex Mono', monospace; font-size:0.7rem; font-weight:600; letter-spacing:0.05em;
+    padding:4px 14px; transform:rotate(-6deg); border-radius:3px; z-index:2;
+  }
+  .card-body{ padding:14px 20px 0 22px; display:flex; flex-direction:column; gap:10px; flex:1; }
+  .video-link{
+    display:inline-flex; align-items:center; gap:6px; font-size:0.78rem; font-weight:600;
+    color:var(--ink); text-decoration:none; border:1px solid var(--line); border-radius:999px;
+    padding:5px 12px; width:fit-content; background:var(--bg-alt);
+  }
+  .video-link:hover{ border-color:var(--copper); }
+  .owner-actions{ display:flex; gap:8px; }
+  .owner-btn{
+    background:none; border:1px solid var(--line); color:var(--ink-soft); border-radius:8px;
+    padding:6px 10px; font-size:0.74rem; font-weight:600;
+  }
+  .owner-btn:hover{ border-color:var(--ink); color:var(--ink); }
+  .owner-btn.danger:hover{ border-color:#C33E3E; color:#C33E3E; }
+  .sort-select{
+    background:var(--card); border:1px solid var(--line); border-radius:10px; padding:9px 12px;
+    font-family:inherit; font-size:0.86rem; color:var(--ink);
+  }
+  .image-drop{
+    border:1.5px dashed var(--line); border-radius:10px; padding:16px; text-align:center;
+    cursor:pointer; background:var(--card);
+  }
+  .image-drop:hover{ border-color:var(--copper); }
+  .image-previews{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+  .image-previews .thumb{
+    position:relative; width:64px; height:64px; border-radius:8px; overflow:hidden; border:1px solid var(--line);
+  }
+  .image-previews .thumb img{ width:100%; height:100%; object-fit:cover; }
+  .image-previews .thumb button{
+    position:absolute; top:2px; right:2px; background:rgba(15,46,29,0.8); color:#fff; border:none;
+    border-radius:50%; width:18px; height:18px; font-size:0.65rem; line-height:1; padding:0;
+  }
+  .card-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+  .badge-row{ display:flex; gap:6px; flex-wrap:wrap; }
+  .badge{
+    font-family:'IBM Plex Mono', monospace; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.04em;
+    padding:4px 8px; border-radius:999px; background:var(--bg-alt); color:var(--ink-soft); border:1px solid var(--line);
+  }
+  .price{ font-family:'IBM Plex Mono', monospace; font-weight:600; font-size:1.05rem; white-space:nowrap; }
+  .card h3{ font-size:1.05rem; font-weight:600; line-height:1.3; }
+  .card p.desc{ font-size:0.88rem; color:var(--ink-soft); flex:1; }
+  .card-footer{
+    display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:6px;
+    padding-top:12px; border-top:1px dashed var(--line);
+  }
+  .seller{ font-size:0.78rem; color:var(--ink-soft); }
+  .seller strong{ color:var(--ink); }
+  .card-btn{
+    background:var(--ink); color:var(--bg); border:none; border-radius:8px; padding:8px 14px; font-weight:600; font-size:0.8rem;
+  }
+  .card-btn:hover{ background:#164026; }
+  .card-btn.demo{ background:var(--bg-alt); color:var(--ink-soft); border:1px solid var(--line); }
+
+  .empty-state{
+    text-align:center; padding:60px 20px; color:var(--ink-soft); border:1.5px dashed var(--line); border-radius:var(--radius);
+    background:var(--card);
+  }
+  .empty-state h3{ color:var(--ink); margin-bottom:6px; }
+
+  .skeleton{ display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:18px; }
+  .skel-card{ height:190px; border-radius:var(--radius); background:linear-gradient(90deg, var(--card) 0%, var(--bg-alt) 50%, var(--card) 100%); background-size:200% 100%; animation:shimmer 1.4s infinite; }
+  @media (prefers-reduced-motion: reduce){ .skel-card{ animation:none; } }
+  @keyframes shimmer{ 0%{background-position:200% 0;} 100%{background-position:-200% 0;} }
+
+  /* ---------- floating sell button ---------- */
+  .fab{
+    position:fixed; bottom:26px; right:26px; z-index:60;
+    background:var(--copper); color:var(--ink); border:none; border-radius:999px;
+    padding:14px 22px; font-weight:700; box-shadow:0 10px 24px rgba(15,46,29,0.25);
+    display:flex; align-items:center; gap:8px;
+  }
+  .fab:hover{ background:var(--copper-bright); }
+  @media (max-width:640px){ .fab span.long{ display:none; } .fab{ padding:14px 16px; } }
+
+  /* ---------- modal ---------- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(15,46,29,0.45); z-index:100;
+    display:none; align-items:flex-start; justify-content:center; padding:40px 16px; overflow-y:auto;
+  }
+  .overlay.open{ display:flex; }
+  .modal{
+    background:var(--bg); border-radius:16px; max-width:560px; width:100%; padding:28px 26px 26px;
+    border:1px solid var(--line); box-shadow:0 20px 50px rgba(0,0,0,0.25);
+  }
+  .modal-head{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
+  .modal-head h2{ font-size:1.35rem; }
+  .modal-sub{ color:var(--ink-soft); font-size:0.88rem; margin-bottom:20px; }
+  .modal-close{ background:none; border:none; font-size:1.3rem; color:var(--ink-soft); line-height:1; padding:4px; }
+  .form-row{ margin-bottom:16px; }
+  .form-row.two{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  label{ display:block; font-size:0.82rem; font-weight:600; margin-bottom:6px; color:var(--ink); }
+  input, select, textarea{
+    width:100%; border:1.5px solid var(--line); border-radius:8px; padding:10px 12px; font-family:inherit;
+    font-size:0.92rem; background:var(--card); color:var(--ink);
+  }
+  textarea{ min-height:80px; resize:vertical; }
+  .form-hint{ font-size:0.74rem; color:var(--ink-soft); margin-top:6px; }
+  .form-actions{ display:flex; gap:12px; margin-top:6px; justify-content:flex-end; }
+  .disclosure{
+    background:var(--bg-alt); border:1px solid var(--line); border-radius:10px; padding:10px 12px;
+    font-size:0.78rem; color:var(--ink-soft); margin-bottom:18px;
+  }
+  .toast{
+    position:fixed; bottom:26px; left:50%; transform:translate(-50%, 20px); opacity:0;
+    background:var(--ink); color:var(--bg); padding:12px 20px; border-radius:10px; font-size:0.88rem;
+    transition:opacity .25s, transform .25s; z-index:120; pointer-events:none;
+  }
+  .toast.show{ opacity:1; transform:translate(-50%,0); }
+
+  footer{ border-top:1px solid var(--line); padding:32px 0; }
+  .footer-inner{ display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; color:var(--ink-soft); font-size:0.84rem; }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav-inner">
+    <a href="#" class="logo">
+      <svg width="22" height="22" viewBox="0 0 24 24"><path d="M4 12h4M16 12h4M8 12a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2Z" stroke="#E3A828" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      SolderYard
+    </a>
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">☰</button>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#legend">Categories</a></li>
+      <li><a href="#listings">Browse</a></li>
+      <li><a href="#" id="navSellLink">Sell</a></li>
+      <li><button class="nav-cta" id="navSellBtn">+ List something</button></li>
+      <li id="authArea"><button class="nav-cta" id="navAuthBtn" style="background:transparent; color:var(--bg); border:1.5px solid rgba(238,243,241,0.5);">Log in</button></li>
+    </ul>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap hero-inner">
+    <div class="eyebrow"><span class="dot"></span> Built for campus makers</div>
+    <h1>Turn your old builds into <span class="underline">someone else's</span> next project.</h1>
+    <p class="sub">SolderYard is where students trade finished projects, half-built kits, and spare components instead of letting them collect dust in a drawer. No listing fees, no middlemen — just makers finding makers.</p>
+    <div class="hero-actions">
+      <a href="#listings" class="btn btn-primary">Browse the yard</a>
+      <button class="btn btn-copper" id="heroSellBtn">List something</button>
+    </div>
+  </div>
+  <svg class="trace" viewBox="0 0 420 420" aria-hidden="true">
+    <path d="M410 40 L280 40 L280 120 L200 120 L200 200 L340 200 L340 280 L120 280 L120 360 L20 360"/>
+    <circle cx="410" cy="40" r="5" fill="#C68E17"/>
+    <circle cx="20" cy="360" r="5" fill="#C68E17"/>
+  </svg>
+</section>
+
+<section class="section" id="legend">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Sort by color code</h2>
+      <p>Just like a resistor, every listing wears its category on its sleeve. Tap a band to filter the yard below.</p>
+    </div>
+    <div class="legend-grid" id="legendGrid"></div>
+  </div>
+</section>
+
+<section class="section" id="listings" style="padding-top:0;">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>The yard</h2>
+      <p>Full projects, spare parts, tools — whatever's ready to change hands.</p>
+    </div>
+
+    <div class="listings-toolbar">
+      <div class="tabs" id="typeTabs">
+        <button class="tab active" data-type="all">All</button>
+        <button class="tab" data-type="project">Projects</button>
+        <button class="tab" data-type="component">Components</button>
+        <button class="tab" data-type="mine" id="mineTab" style="display:none;">Mine</button>
+      </div>
+      <div class="search-box">
+        <span>🔎</span>
+        <input type="text" id="searchInput" placeholder="Search parts, projects, boards…">
+      </div>
+      <select class="sort-select" id="sortSelect">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="price-low">Price: low to high</option>
+        <option value="price-high">Price: high to low</option>
+      </select>
+      <button class="clear-filter" id="clearFilter" style="display:none;">Clear category filter ✕</button>
+    </div>
+
+    <div id="gridArea">
+      <div class="skeleton">
+        <div class="skel-card"></div><div class="skel-card"></div><div class="skel-card"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap footer-inner">
+    <span>SolderYard — a campus-to-campus swap board for electronics.</span>
+    <span>Listings are stored for everyone using this page. Don't post anything you wouldn't want public.</span>
+  </div>
+</footer>
+
+<button class="fab" id="fabSellBtn">+ <span class="long">List something</span></button>
+
+<div class="overlay" id="overlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-head">
+      <h2 id="modalTitle">List something in the yard</h2>
+      <button class="modal-close" id="modalClose" aria-label="Close">✕</button>
+    </div>
+    <p class="modal-sub">Fill this in and it goes straight onto the board below.</p>
+    <div class="disclosure">Heads up: this board is shared. Anything you post here — including your contact info — is visible to everyone who opens this page, not just you.</div>
+    <form id="sellForm">
+      <div class="form-row">
+        <label for="f-title">Title</label>
+        <input id="f-title" required placeholder="e.g. ESP32 weather station, assembled">
+      </div>
+      <div class="form-row two">
+        <div>
+          <label for="f-type">Type</label>
+          <select id="f-type">
+            <option value="project">Full project</option>
+            <option value="component">Component / part</option>
+          </select>
+        </div>
+        <div>
+          <label for="f-condition">Condition</label>
+          <select id="f-condition">
+            <option>New</option>
+            <option>Used</option>
+            <option>DIY Kit</option>
+            <option>Parts Only</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <label for="f-category">Category</label>
+        <select id="f-category"></select>
+      </div>
+      <div class="form-row two">
+        <div>
+          <label for="f-price">Price</label>
+          <input id="f-price" required placeholder="e.g. 20 or Free">
+        </div>
+        <div>
+          <label for="f-seller">Your name</label>
+          <input id="f-seller" required placeholder="e.g. Fatima R.">
+        </div>
+      </div>
+      <div class="form-row">
+        <label for="f-contact">Contact (email, WhatsApp, whatever you check)</label>
+        <input id="f-contact" required placeholder="e.g. fatima@ university.edu">
+      </div>
+      <div class="form-row">
+        <label for="f-desc">Description</label>
+        <textarea id="f-desc" required placeholder="What is it, what condition, what's included, why you're letting it go..."></textarea>
+      </div>
+      <div class="form-row">
+        <label for="f-video">Video link (optional)</label>
+        <input id="f-video" placeholder="Paste a YouTube / Google Drive link showing it in action">
+      </div>
+      <div class="form-row">
+        <label>Photos (optional, up to 3)</label>
+        <div class="image-drop" id="imageDrop">
+          <span>Click to choose photos</span>
+          <input type="file" id="f-images" accept="image/*" multiple style="display:none;">
+        </div>
+        <div class="image-previews" id="imagePreviews"></div>
+        <p class="form-hint">Photos upload when you hit "Post listing" below.</p>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" id="cancelBtn">Cancel</button>
+        <button type="submit" class="btn btn-copper">Post listing</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="overlay" id="authOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="authModalTitle" style="max-width:420px;">
+    <div class="modal-head">
+      <h2 id="authModalTitle">Log in to sell</h2>
+      <button class="modal-close" id="authModalClose" aria-label="Close">✕</button>
+    </div>
+    <p class="modal-sub" id="authModalSub">You need an account to post a listing. Browsing is always open to everyone.</p>
+    <div class="tabs" style="margin-bottom:18px;">
+      <button class="tab active" id="authTabLogin" type="button">Log in</button>
+      <button class="tab" id="authTabSignup" type="button">Sign up</button>
+    </div>
+    <form id="authForm">
+      <div class="form-row">
+        <label for="auth-email">Email</label>
+        <input id="auth-email" type="email" required placeholder="you@university.edu">
+      </div>
+      <div class="form-row">
+        <label for="auth-password">Password</label>
+        <input id="auth-password" type="password" required minlength="6" placeholder="At least 6 characters">
+      </div>
+      <p id="authError" style="color:#C33E3E; font-size:0.82rem; display:none;"></p>
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" id="authCancelBtn">Cancel</button>
+        <button type="submit" class="btn btn-copper" id="authSubmitBtn">Log in</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CATEGORIES = [
+  { key:'micro',    label:'Microcontrollers',       color:'#7B4B27', band:'Brown'  },
+  { key:'sensors',  label:'Sensors',                 color:'#C33E3E', band:'Red'    },
+  { key:'robotics', label:'Robotics & Motors',        color:'#D97F2D', band:'Orange' },
+  { key:'power',    label:'Power & Batteries',        color:'#D9B92D', band:'Yellow' },
+  { key:'passive',  label:'Passive Components',       color:'#3E8E5C', band:'Green'  },
+  { key:'displays', label:'Displays & Audio',         color:'#2E6FB0', band:'Blue'   },
+  { key:'kits',     label:'Full Projects & Kits',     color:'#7A4FB5', band:'Violet' },
+  { key:'tools',    label:'Tools & Accessories',      color:'#8A8F8C', band:'Gray'   },
+];
+
+const SEED_LISTINGS = [
+  { id:'seed1', title:'ESP32 Weather Station, assembled', type:'project', category:'micro', condition:'Used', price:'28', description:'Reads temperature, humidity and pressure and pushes readings to a small web dashboard. Comes in a printed enclosure.', seller:'Demo listing', contact:null, images:[], video_url:null, sold:false, user_id:null },
+  { id:'seed2', title:'Line-following robot chassis kit', type:'project', category:'robotics', condition:'DIY Kit', price:'35', description:'Two-motor chassis with an IR sensor array and a motor driver board. Missing the battery holder, everything else included.', seller:'Demo listing', contact:null, images:[], video_url:null, sold:false, user_id:null },
+  { id:'seed3', title:'Assorted resistors, ~600 pieces', type:'component', category:'passive', condition:'New', price:'8', description:'1/4W carbon film, common values from 10Ω to 1MΩ, sorted and labelled by band count.', seller:'Demo listing', contact:null, images:[], video_url:null, sold:false, user_id:null },
+  { id:'seed4', title:'16x2 LCD displays, pack of 4', type:'component', category:'displays', condition:'Used', price:'12', description:'Pulled from a decommissioned lab kit. All four tested working, backlight included.', seller:'Demo listing', contact:null, images:[], video_url:null, sold:false, user_id:null },
+  { id:'seed5', title:'18650 battery pack + BMS board', type:'component', category:'power', condition:'Used', price:'15', description:'3S pack with a balance-charging board. Good fit for a small robotics build.', seller:'Demo listing', contact:null, images:[], video_url:null, sold:false, user_id:null },
+  { id:'seed6', title:'FSM digital vending machine — simulation + report', type:'project', category:'kits', condition:'DIY Kit', price:'20', description:'Full finite-state-machine simulation source plus a written project report. Useful as a reference for a digital logic course.', seller:'Demo listing', contact:null, images:[], video_url:null, sold:false, user_id:null },
+  { id:'seed7', title:'PIR motion sensor modules, pack of 5', type:'component', category:'sensors', condition:'New', price:'9', description:'HC-SR501 modules with adjustable delay and sensitivity trimmers.', seller:'Demo listing', contact:null, images:[], video_url:null, sold:false, user_id:null },
+  { id:'seed8', title:'Adjustable soldering iron + stand', type:'component', category:'tools', condition:'Used', price:'18', description:'60W adjustable-temperature iron, lightly used, comes with two spare tips.', seller:'Demo listing', contact:null, images:[], video_url:null, sold:false, user_id:null },
+  { id:'seed9', title:'Multi-drone route planner — source code', type:'project', category:'kits', condition:'New', price:'Free', description:'A small C++ pathfinding engine with a simple web front end, originally built for a data structures course project.', seller:'Demo listing', contact:null, images:[], video_url:null, sold:false, user_id:null },
+  { id:'seed10', title:'Full-size breadboard + jumper wire bundle', type:'component', category:'passive', condition:'New', price:'6', description:'One full-size breadboard with 65 jumper wires in assorted lengths.', seller:'Demo listing', contact:null, images:[], video_url:null, sold:false, user_id:null },
+];
+
+// ---- Fill these in from Supabase → Project Settings → API ----
+    const SUPABASE_URL = 'https://rzeaykouuyhhvavycttt.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6ZWF5a291dXloaHZhdnljdHR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2MTY4ODksImV4cCI6MjEwMDE5Mjg4OX0.vb5cnUD4UxiTHam94r7ii6uDedFUECwyim76PXpz_cU';
+// ----------------------------------------------------------------
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let listings = [];
+let activeCategory = null;
+let activeType = 'all';
+let searchTerm = '';
+let sortMode = 'newest';
+let currentSession = null;
+let pendingSellIntent = false;
+let authMode = 'login'; // or 'signup'
+let selectedImageFiles = [];
+
+const catByKey = k => CATEGORIES.find(c => c.key === k);
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=> t.classList.remove('show'), 2600);
+}
+
+async function loadListings(){
+  try{
+    const { data, error } = await sb
+      .from('listings')
+      .select('*')
+      .order('created_at', { ascending:false });
+    if(error) throw error;
+    listings = SEED_LISTINGS.concat(data || []);
+  }catch(e){
+    console.error(e);
+    listings = SEED_LISTINGS;
+    toast("Couldn't reach the database — showing sample listings only.");
+  }
+  renderGrid();
+}
+
+async function postListing(newItem){
+  try{
+    const { error } = await sb.from('listings').insert([newItem]);
+    if(error) throw error;
+    await loadListings();
+    return true;
+  }catch(e){
+    console.error(e);
+    toast("Couldn't post your listing — try again in a moment.");
+    return false;
+  }
+}
+
+function renderLegend(){
+  const el = document.getElementById('legendGrid');
+  el.innerHTML = CATEGORIES.map(c => `
+    <button class="band-chip" data-key="${c.key}" style="--band:${c.color}">
+      <span class="band-swatch" style="background:${c.color}"></span>
+      <span>
+        <span class="band-label" style="display:block;">${c.label}</span>
+        <span class="band-name">${c.band} band</span>
+      </span>
+    </button>
+  `).join('');
+  el.querySelectorAll('.band-chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      const key = chip.dataset.key;
+      activeCategory = (activeCategory === key) ? null : key;
+      renderGrid();
+    });
+  });
+}
+
+function matchesFilters(item){
+  if(activeType === 'mine'){
+    if(!currentSession || item.user_id !== currentSession.user.id) return false;
+  }else if(activeType !== 'all' && item.type !== activeType){
+    return false;
+  }
+  if(activeCategory && item.category !== activeCategory) return false;
+  if(searchTerm){
+    const hay = (item.title + ' ' + item.description).toLowerCase();
+    if(!hay.includes(searchTerm.toLowerCase())) return false;
+  }
+  return true;
+}
+
+function sortItems(items){
+  const sorted = items.slice();
+  const priceNum = p => (p === 'Free' || p === '' || p == null) ? 0 : (parseFloat(p) || 0);
+  switch(sortMode){
+    case 'oldest': return sorted.reverse();
+    case 'price-low': return sorted.sort((a,b)=> priceNum(a.price) - priceNum(b.price));
+    case 'price-high': return sorted.sort((a,b)=> priceNum(b.price) - priceNum(a.price));
+    default: return sorted; // DB already returns newest-first; seed items trail behind
+  }
+}
+
+function renderGrid(){
+  document.querySelectorAll('.band-chip').forEach(chip=>{
+    chip.classList.toggle('active', chip.dataset.key === activeCategory);
+  });
+  document.getElementById('clearFilter').style.display = activeCategory ? 'inline-block' : 'none';
+  document.getElementById('mineTab').style.display = currentSession ? 'inline-block' : 'none';
+
+  const area = document.getElementById('gridArea');
+  const items = sortItems(listings.filter(matchesFilters));
+
+  if(items.length === 0){
+    area.innerHTML = `
+      <div class="empty-state">
+        <h3>Nothing here yet in this band.</h3>
+        <p>Be the first to list one — it takes about a minute.</p>
+        <div style="margin-top:16px;">
+          <button class="btn btn-copper" id="emptyStateSellBtn">List something</button>
+        </div>
+      </div>`;
+    document.getElementById('emptyStateSellBtn').addEventListener('click', requireLoginThenSell);
+    return;
+  }
+
+  area.innerHTML = `<div class="grid">${items.map(cardHtml).join('')}</div>`;
+}
+
+function cardHtml(item){
+  const cat = catByKey(item.category) || CATEGORIES[0];
+  const priceLabel = (item.price === 'Free' || item.price === '' ) ? 'Free' : ('$' + item.price);
+  const isDemo = !item.contact;
+  const isOwner = currentSession && item.user_id === currentSession.user.id;
+  const images = Array.isArray(item.images) ? item.images : [];
+  const mediaHtml = images.length
+    ? `<img src="${escapeAttr(images[0])}" alt="${escapeAttr(item.title)}" loading="lazy">${images.length>1 ? `<span class="media-count">+${images.length-1} more</span>` : ''}`
+    : `<div class="no-image">No photo yet</div>`;
+  const videoHtml = item.video_url
+    ? `<a class="video-link" href="${escapeAttr(item.video_url)}" target="_blank" rel="noopener">▶ Watch demo</a>`
+    : '';
+  const contactBtn = item.sold
+    ? `<button class="card-btn demo" disabled>Sold</button>`
+    : isDemo
+      ? `<button class="card-btn demo" data-demo="1">Sample listing</button>`
+      : `<button class="card-btn" data-contact="${escapeAttr(item.contact)}" data-title="${escapeAttr(item.title)}">Contact seller</button>`;
+  const ownerActions = isOwner
+    ? `<div class="owner-actions">
+         <button class="owner-btn" data-action="sold" data-id="${item.id}">${item.sold ? 'Mark available' : 'Mark sold'}</button>
+         <button class="owner-btn danger" data-action="delete" data-id="${item.id}">Delete</button>
+       </div>`
+    : '';
+  return `
+    <div class="card ${item.sold ? 'sold' : ''}" style="--band-color:${cat.color}">
+      ${item.sold ? '<div class="sold-ribbon">SOLD</div>' : ''}
+      <div class="card-media">${mediaHtml}</div>
+      <div class="card-body">
+        <div class="card-top">
+          <div class="badge-row">
+            <span class="badge">${cat.label}</span>
+            <span class="badge">${item.condition}</span>
+          </div>
+          <span class="price mono">${priceLabel}</span>
+        </div>
+        <h3>${escapeHtml(item.title)}</h3>
+        <p class="desc">${escapeHtml(item.description)}</p>
+        ${videoHtml}
+        <div class="card-footer">
+          <span class="seller">by <strong>${escapeHtml(item.seller)}</strong></span>
+          ${contactBtn}
+        </div>
+        ${ownerActions}
+      </div>
+    </div>`;
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function escapeAttr(s){ return escapeHtml(s); }
+
+document.addEventListener('click', (e)=>{
+  const demoBtn = e.target.closest('[data-demo]');
+  if(demoBtn){
+    toast('This is a sample listing — post a real one to connect with an actual seller.');
+    return;
+  }
+  const contactBtn = e.target.closest('[data-contact]');
+  if(contactBtn){
+    const contact = contactBtn.dataset.contact;
+    const title = contactBtn.dataset.title;
+    toast(`Reach out about "${title}" via: ${contact}`);
+    return;
+  }
+  const actionBtn = e.target.closest('[data-action]');
+  if(actionBtn){
+    const id = actionBtn.dataset.id;
+    const action = actionBtn.dataset.action;
+    if(action === 'sold') toggleSold(id);
+    if(action === 'delete') deleteListing(id);
+  }
+});
+
+async function toggleSold(id){
+  const item = listings.find(l => String(l.id) === String(id));
+  if(!item || !currentSession) return;
+  try{
+    const { error } = await sb.from('listings').update({ sold: !item.sold }).eq('id', id);
+    if(error) throw error;
+    await loadListings();
+    toast(item.sold ? 'Marked as available again.' : 'Marked as sold.');
+  }catch(e){
+    console.error(e);
+    toast("Couldn't update that listing right now.");
+  }
+}
+
+async function deleteListing(id){
+  if(!currentSession) return;
+  if(!confirm('Delete this listing? This can\'t be undone.')) return;
+  try{
+    const { error } = await sb.from('listings').delete().eq('id', id);
+    if(error) throw error;
+    await loadListings();
+    toast('Listing deleted.');
+  }catch(e){
+    console.error(e);
+    toast("Couldn't delete that listing right now.");
+  }
+}
+
+document.getElementById('clearFilter').addEventListener('click', ()=>{
+  activeCategory = null;
+  renderGrid();
+});
+
+document.getElementById('typeTabs').addEventListener('click', (e)=>{
+  const btn = e.target.closest('.tab');
+  if(!btn) return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  activeType = btn.dataset.type;
+  renderGrid();
+});
+
+document.getElementById('sortSelect').addEventListener('change', (e)=>{
+  sortMode = e.target.value;
+  renderGrid();
+});
+
+document.getElementById('searchInput').addEventListener('input', (e)=>{
+  searchTerm = e.target.value;
+  renderGrid();
+});
+
+/* nav toggle */
+const navToggle = document.getElementById('navToggle');
+navToggle.addEventListener('click', ()=>{
+  const links = document.getElementById('navLinks');
+  const open = links.classList.toggle('open');
+  navToggle.setAttribute('aria-expanded', String(open));
+});
+
+/* modal */
+const overlay = document.getElementById('overlay');
+function openModal(){
+  overlay.classList.add('open');
+  if(currentSession && !document.getElementById('f-contact').value){
+    document.getElementById('f-contact').value = currentSession.user.email;
+  }
+  document.getElementById('f-title').focus();
+}
+function closeModal(){
+  overlay.classList.remove('open');
+}
+function requireLoginThenSell(){
+  if(currentSession){
+    openModal();
+  }else{
+    openAuthModal(true);
+  }
+}
+document.getElementById('fabSellBtn').addEventListener('click', requireLoginThenSell);
+document.getElementById('heroSellBtn').addEventListener('click', requireLoginThenSell);
+document.getElementById('navSellBtn').addEventListener('click', requireLoginThenSell);
+document.getElementById('navSellLink').addEventListener('click', (e)=>{ e.preventDefault(); requireLoginThenSell(); });
+document.getElementById('modalClose').addEventListener('click', closeModal);
+document.getElementById('cancelBtn').addEventListener('click', closeModal);
+overlay.addEventListener('click', (e)=>{ if(e.target === overlay) closeModal(); });
+document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape' && overlay.classList.contains('open')) closeModal(); });
+
+/* ---------- auth ---------- */
+const authOverlay = document.getElementById('authOverlay');
+const authForm = document.getElementById('authForm');
+const authError = document.getElementById('authError');
+const navAuthBtn = document.getElementById('navAuthBtn');
+
+function openAuthModal(fromSellIntent){
+  pendingSellIntent = !!fromSellIntent;
+  authError.style.display = 'none';
+  authForm.reset();
+  document.getElementById('authModalSub').textContent = fromSellIntent
+    ? "You need an account to post a listing. Browsing is always open to everyone."
+    : "Log in to manage your listings.";
+  authOverlay.classList.add('open');
+  document.getElementById('auth-email').focus();
+}
+function closeAuthModal(){ authOverlay.classList.remove('open'); }
+
+function setAuthMode(mode){
+  authMode = mode;
+  document.getElementById('authTabLogin').classList.toggle('active', mode === 'login');
+  document.getElementById('authTabSignup').classList.toggle('active', mode === 'signup');
+  document.getElementById('authModalTitle').textContent = mode === 'login' ? 'Log in to sell' : 'Create an account';
+  document.getElementById('authSubmitBtn').textContent = mode === 'login' ? 'Log in' : 'Sign up';
+  authError.style.display = 'none';
+}
+document.getElementById('authTabLogin').addEventListener('click', ()=> setAuthMode('login'));
+document.getElementById('authTabSignup').addEventListener('click', ()=> setAuthMode('signup'));
+document.getElementById('authModalClose').addEventListener('click', closeAuthModal);
+document.getElementById('authCancelBtn').addEventListener('click', closeAuthModal);
+authOverlay.addEventListener('click', (e)=>{ if(e.target === authOverlay) closeAuthModal(); });
+
+authForm.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const submitBtn = document.getElementById('authSubmitBtn');
+  submitBtn.disabled = true;
+  authError.style.display = 'none';
+  try{
+    if(authMode === 'login'){
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+      if(error) throw error;
+      currentSession = data.session;
+    }else{
+      const { data, error } = await sb.auth.signUp({ email, password });
+      if(error) throw error;
+      currentSession = data.session;
+      if(!currentSession){
+        authError.textContent = 'Account created — check your email to confirm, then log in.';
+        authError.style.display = 'block';
+        submitBtn.disabled = false;
+        return;
+      }
+    }
+    updateAuthUI();
+    closeAuthModal();
+    toast(authMode === 'login' ? 'Logged in!' : 'Account created and logged in!');
+    if(pendingSellIntent){
+      pendingSellIntent = false;
+      openModal();
+    }
+  }catch(err){
+    authError.textContent = err.message || 'Something went wrong — try again.';
+    authError.style.display = 'block';
+  }finally{
+    submitBtn.disabled = false;
+  }
+});
+
+function updateAuthUI(){
+  if(currentSession){
+    navAuthBtn.textContent = 'Log out (' + currentSession.user.email.split('@')[0] + ')';
+  }else{
+    navAuthBtn.textContent = 'Log in';
+  }
+}
+
+navAuthBtn.addEventListener('click', async ()=>{
+  if(currentSession){
+    await sb.auth.signOut();
+    currentSession = null;
+    updateAuthUI();
+    toast('Logged out.');
+  }else{
+    openAuthModal(false);
+  }
+});
+
+async function initAuth(){
+  const { data } = await sb.auth.getSession();
+  currentSession = data.session;
+  updateAuthUI();
+  sb.auth.onAuthStateChange((_event, session)=>{
+    currentSession = session;
+    updateAuthUI();
+  });
+}
+initAuth();
+
+/* populate category select */
+const categorySelect = document.getElementById('f-category');
+categorySelect.innerHTML = CATEGORIES.map(c => `<option value="${c.key}">${c.label} (${c.band})</option>`).join('');
+
+/* ---------- image picker ---------- */
+const imageDrop = document.getElementById('imageDrop');
+const imageInput = document.getElementById('f-images');
+const imagePreviews = document.getElementById('imagePreviews');
+
+imageDrop.addEventListener('click', ()=> imageInput.click());
+imageInput.addEventListener('change', ()=>{
+  const incoming = Array.from(imageInput.files || []);
+  selectedImageFiles = selectedImageFiles.concat(incoming).slice(0, 3);
+  renderImagePreviews();
+  imageInput.value = '';
+});
+
+function renderImagePreviews(){
+  imagePreviews.innerHTML = selectedImageFiles.map((file, idx) => `
+    <div class="thumb">
+      <img src="${URL.createObjectURL(file)}" alt="preview">
+      <button type="button" data-remove-img="${idx}" aria-label="Remove photo">✕</button>
+    </div>
+  `).join('');
+}
+
+imagePreviews.addEventListener('click', (e)=>{
+  const btn = e.target.closest('[data-remove-img]');
+  if(!btn) return;
+  const idx = Number(btn.dataset.removeImg);
+  selectedImageFiles.splice(idx, 1);
+  renderImagePreviews();
+});
+
+async function uploadSelectedImages(){
+  const urls = [];
+  for(const file of selectedImageFiles){
+    const path = `${currentSession.user.id}/${Date.now()}-${Math.floor(Math.random()*10000)}-${file.name}`;
+    const { error } = await sb.storage.from('listing-images').upload(path, file);
+    if(error){ console.error(error); continue; }
+    const { data } = sb.storage.from('listing-images').getPublicUrl(path);
+    if(data && data.publicUrl) urls.push(data.publicUrl);
+  }
+  return urls;
+}
+
+document.getElementById('sellForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  if(!currentSession){
+    closeModal();
+    openAuthModal(true);
+    return;
+  }
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Uploading photos…';
+  const imageUrls = await uploadSelectedImages();
+  submitBtn.textContent = 'Posting…';
+  const newItem = {
+    title: document.getElementById('f-title').value.trim(),
+    type: document.getElementById('f-type').value,
+    category: document.getElementById('f-category').value,
+    condition: document.getElementById('f-condition').value,
+    price: document.getElementById('f-price').value.trim(),
+    seller: document.getElementById('f-seller').value.trim(),
+    contact: document.getElementById('f-contact').value.trim(),
+    description: document.getElementById('f-desc').value.trim(),
+    video_url: document.getElementById('f-video').value.trim() || null,
+    images: imageUrls,
+    sold: false,
+    user_id: currentSession.user.id,
+  };
+  const ok = await postListing(newItem);
+  submitBtn.disabled = false;
+  submitBtn.textContent = 'Post listing';
+  if(ok){
+    closeModal();
+    document.getElementById('sellForm').reset();
+    selectedImageFiles = [];
+    renderImagePreviews();
+    toast('Listed! Your item is now live on the board.');
+  }
+});
+
+renderLegend();
+loadListings();
+</script>
+</body>
+</html>
